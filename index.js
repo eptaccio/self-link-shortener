@@ -1,29 +1,24 @@
-const { send } = require('micro')
 const { router, get } = require('microrouter')
-const dotenorio = require('dotenorio')()
+const { send } = require('micro')
 const isUrl = require('is-url')
+const links = require('./links')
 const redirect = require('micro-redirect')
 
-const main = (req, res) => send(res, 200, dotenorio)
 const data = (req, res) => {
-  let key = req.params.key
-  let value = dotenorio[key]
+  const { route } = req.params
 
-  if (!value) {
-    return send(res, 400, `Sorry, '${key}' it is a invalid param.`)
+  const destiny = links[route]
+
+  if (destiny && isUrl(destiny)) {
+    return redirect(res, 302, destiny)
   }
 
-  if (isUrl(value)) {
-    return redirect(res, 302, value)
-  }
-
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8')
-  send(res, 200, value)
+  send(res, 404, 'Sorry, this route not exists.')
 }
-const notfound = (req, res) => send(res, 404, 'Sorry, this route not exists.')
+
+const main = (req, res) => links
 
 module.exports = router(
-  get('/', main),
-  get('/:key', data),
-  get('/*', notfound)
+  get('/:route', data),
+  get('/', main)
 )
